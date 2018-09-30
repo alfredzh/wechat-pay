@@ -1,3 +1,5 @@
+import _ from 'underscore'
+
 export enum WechatPaymentMode {
   PRODUCTION,
   SANDBOX
@@ -31,8 +33,70 @@ enum SandboxUrl {
   TRANSFERS_QUERY = 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gettransferinfo',
 }
 
+interface Config {
+  appId: string;
+  partnerKey: string;
+  mchId: string;
+  subMchId: string;
+  notifyUrl: string;
+  passphrase: string;
+  pfx: string;
+}
+
 export class WechatPayment {
-  
+  appId: string;
+  partnerKey: string;
+  mchId: string;
+  subMchId: string;
+  notifyUrl: string;
+  passphrase: string;
+  pfx: string;
+  constructor(config: Config){
+    this.initConfig(config)
+  }
+  protected initConfig (config: Config){
+    this.appId = config.appId;
+    this.partnerKey = config.partnerKey;
+    this.mchId = config.mchId;
+    this.subMchId = config.subMchId;
+    this.notifyUrl = config.notifyUrl;
+    this.passphrase = config.passphrase || config.mchId;
+    this.pfx = config.pfx;
+  }
+  public async getBrandWCPayRequestParams (order, callback) {
+    var default_params = {
+      appId: this.appId,
+      timeStamp: this._generateTimeStamp(),
+      nonceStr: this._generateNonceStr(),
+      signType: 'MD5'
+    };
+
+    order = this._extendWithDefault(order, [
+      'notify_url'
+    ]);
+
+    this.unifiedOrder(order, function(err, data) {
+      if (err) {
+        return callback(err);
+      }
+
+      var params = _.extend(default_params, {
+        package: 'prepay_id=' + data.prepay_id
+      });
+
+      params.paySign = this._getSign(params);
+
+      if (order.trade_type == 'NATIVE') {
+        params.code_url = data.code_url;
+      }else if(order.trade_type == 'MWEB'){
+        params.mweb_url = data.mweb_url;
+      }
+
+      params.timestamp = params.timeStamp;
+
+      callback(null, params);
+    });
+  }
 }
 
 // var md5 = require('md5');
