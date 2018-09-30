@@ -63,15 +63,117 @@ export class WechatPayment {
     this.passphrase = config.passphrase || config.mchId;
     this.pfx = config.pfx;
   }
+  protected generateTimeStamp(): string {
+    const timestamp = +new Date().valueOf() / 1000
+    return timestamp.toString();
+  };
+  protected generateNonceStr(length?: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const maxPos = chars.length;
+    let noceStr = '';
+    const nonceStrLength = length || 32
+    for (let i = 0; i < nonceStrLength; i++) {
+      noceStr += chars.charAt(Math.floor(Math.random() * maxPos));
+    }
+    return noceStr;
+  };
+  protected extendWithDefault(obj, keysNeedExtend) {
+    var defaults = {
+      appid: this.appId,
+      mch_id: this.mchId,
+      sub_mch_id: this.subMchId,
+      nonce_str: this.generateNonceStr(),
+      notify_url: this.notifyUrl,
+      op_user_id: this.mchId,
+      pfx: this.pfx
+    };
+    var extendObject = {};
+    keysNeedExtend.forEach(function(k) {
+      if (defaults[k]) {
+        extendObject[k] = defaults[k];
+      }
+    });
+    return _.extend(extendObject, obj);
+  }
+  private signedQuery(url, params, options, callback) {
+      var self = this;
+      var required = options.required || [];
+
+    if (url == URLS.REDPACK_SEND) {
+      params = this.extendWithDefault(params, [
+        'mch_id',
+        'nonce_str'
+      ]);
+    } else if (url == URLS.TRANSFERS) {
+      params = this.extendWithDefault(params, [
+        'nonce_str'
+      ]);
+    } else {
+      params = this.extendWithDefault(params, [
+        'appid',
+        'mch_id',
+        'sub_mch_id',
+        'nonce_str'
+      ]);
+    }
+    params = _.extend({
+      'sign': this._getSign(params)
+    }, params);
+
+    if (params.long_url) {
+      params.long_url = encodeURIComponent(params.long_url);
+    }
+
+    for (var key in params) {
+      if (params[key] !== undefined && params[key] !== null) {
+        params[key] = params[key].toString();
+      }
+    }
+
+    var missing = [];
+    required.forEach(function(key) {
+      var alters = key.split('|');
+      for (var i = alters.length - 1; i >= 0; i--) {
+        if (params[alters[i]]) {
+          return;
+        }
+      }
+      missing.push(key);
+    });
+
+    if (missing.length) {
+      return callback('missing params ' + missing.join(','));
+    }
+
+    var request = (options.https ? this._httpsRequest : this._httpRequest).bind(this);
+    request(url, this.buildXml(params), (err, body) => {
+      if (err) {
+        return callback(err);
+      }
+      this.validate(body, callback);
+    });
+  }
+  public unifiedOrder(params, callback) {
+    let requiredData = ['body', 'out_trade_no', 'total_fee', 'spbill_create_ip', 'trade_type'];
+    if (params.trade_type == 'JSAPI') {
+      requiredData.push('openid|sub_openid');
+    } else if (params.trade_type == 'NATIVE') {
+      requiredData.push('product_id');
+    }
+    params.notify_url = params.notify_url || this.notifyUrl;
+    this._signedQuery(URLS.UNIFIED_ORDER, params, {
+      required: requiredData
+    }, callback);
+  }
   public async getBrandWCPayRequestParams (order, callback) {
     var default_params = {
       appId: this.appId,
-      timeStamp: this._generateTimeStamp(),
-      nonceStr: this._generateNonceStr(),
+      timeStamp: this.generateTimeStamp(),
+      nonceStr: this.generateNonceStr(),
       signType: 'MD5'
     };
 
-    order = this._extendWithDefault(order, [
+    order = this.extendWithDefault(order, [
       'notify_url'
     ]);
 
@@ -519,30 +621,6 @@ export class WechatPayment {
 //   });
 // };
 
-// /**
-//  * 使用默认值扩展对象
-//  * @param  {Object} obj
-//  * @param  {Array} keysNeedExtend
-//  * @return {Object} extendedObject
-//  */
-// Payment.prototype._extendWithDefault = function(obj, keysNeedExtend) {
-//   var defaults = {
-//     appid: this.appId,
-//     mch_id: this.mchId,
-//     sub_mch_id: this.subMchId,
-//     nonce_str: this._generateNonceStr(),
-//     notify_url: this.notifyUrl,
-//     op_user_id: this.mchId,
-//     pfx: this.pfx
-//   };
-//   var extendObject = {};
-//   keysNeedExtend.forEach(function(k) {
-//     if (defaults[k]) {
-//       extendObject[k] = defaults[k];
-//     }
-//   });
-//   return _.extend(extendObject, obj);
-// };
 
 // Payment.prototype._getSign = function(pkg, signType) {
 //   pkg = _.clone(pkg);
@@ -562,9 +640,7 @@ export class WechatPayment {
 //   }).join('&');
 // };
 
-// Payment.prototype._generateTimeStamp = function() {
-//   return parseInt(+new Date() / 1000, 10) + '';
-// };
+
 
 // /**
 //  * [_generateNonceStr description]
