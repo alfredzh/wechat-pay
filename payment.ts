@@ -5,6 +5,25 @@ export enum WechatPaymentMode {
   SANDBOX
 }
 
+export enum SignType  {
+  MD5= 'md5',
+  SHA1= 'sha1'
+};
+
+interface IUrl {
+  UNIFIED_ORDER: string;
+  ORDER_QUERY: string;
+  REFUND: string;
+  REFUND_QUERY: string;
+  DOWNLOAD_BILL: string;
+  SHORT_URL: string;
+  CLOSE_ORDER: string;
+  REDPACK_SEND: string;
+  REDPACK_QUERY: string;
+  TRANSFERS: string;
+  TRANSFERS_QUERY: string;
+}
+
 enum ProductionUrl {
   UNIFIED_ORDER = 'https://api.mch.weixin.qq.com/pay/unifiedorder',
   ORDER_QUERY = 'https://api.mch.weixin.qq.com/pay/orderquery',
@@ -41,9 +60,12 @@ interface Config {
   notifyUrl: string;
   passphrase: string;
   pfx: string;
+  mode?: WechatPaymentMode
 }
 
 export class WechatPayment {
+  mode: WechatPaymentMode = WechatPaymentMode.PRODUCTION;
+  url: IUrl;
   appId: string;
   partnerKey: string;
   mchId: string;
@@ -53,6 +75,7 @@ export class WechatPayment {
   pfx: string;
   constructor(config: Config){
     this.initConfig(config)
+    this.initUrl()
   }
   protected initConfig (config: Config){
     this.appId = config.appId;
@@ -62,6 +85,14 @@ export class WechatPayment {
     this.notifyUrl = config.notifyUrl;
     this.passphrase = config.passphrase || config.mchId;
     this.pfx = config.pfx;
+    this.mode = config.mode || this.mode
+  }
+  protected initUrl () {
+    if(this.mode ===  WechatPaymentMode.PRODUCTION) {
+      this.url = ProductionUrl
+      return
+    }
+    this.url = SandboxUrl
   }
   protected generateTimeStamp(): string {
     const timestamp = +new Date().valueOf() / 1000
@@ -95,16 +126,32 @@ export class WechatPayment {
     });
     return _.extend(extendObject, obj);
   }
+  protected getSign(pkg, signType) {
+    pkg = _.clone(pkg);
+    delete pkg.sign;
+    signType = signType || 'MD5';
+    var string1 = this.toQueryString(pkg);
+    var stringSignTemp = string1 + '&key=' + this.partnerKey;
+    var signValue = signTypes[signType](stringSignTemp).toUpperCase();
+    return signValue;
+  };
+  protected toQueryString(object) {
+    return Object.keys(object).filter(function(key) {
+      return object[key] !== undefined && object[key] !== '';
+    }).sort().map(function(key) {
+      return key + '=' + object[key];
+    }).join('&');
+  };
   private signedQuery(url, params, options, callback) {
       var self = this;
       var required = options.required || [];
 
-    if (url == URLS.REDPACK_SEND) {
+    if (url == this.url.REDPACK_SEND) {
       params = this.extendWithDefault(params, [
         'mch_id',
         'nonce_str'
       ]);
-    } else if (url == URLS.TRANSFERS) {
+    } else if (url == this.url.TRANSFERS) {
       params = this.extendWithDefault(params, [
         'nonce_str'
       ]);
