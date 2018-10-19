@@ -1,0 +1,19 @@
+{
+  "editor.formatOnSave": true,
+  "editor.rulers": [120],
+  "importSorter.generalConfiguration.sortOnBeforeSave": true,
+  "importSorter.importStringConfiguration.maximumNumberOfImportExpressionsPerLine.type": "newLineEachExpressionAfterCountLimit",
+  "importSorter.importStringConfiguration.tabSize": 2,
+  "importSorter.importStringConfiguration.trailingComma": "multiLine",
+  "search.exclude": {
+    "**/bower_components": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/tmp": true
+  },
+  "tslint.autoFixOnSave": true,
+  "tslint.packageManager": "yarn",
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "window.title": "${activeEditorMedium}${separator}${rootName}"
+}

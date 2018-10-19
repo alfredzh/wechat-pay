@@ -1,0 +1,45 @@
+{
+  "extends": [
+    "tslint-config-standard",
+    "tslint-config-airbnb",
+    "tslint-react",
+    "tslint-config-prettier"
+  ],
+  "rules": {
+    "max-line-length": [true, { "limit": 120, "ignore-pattern": "['`\"]" }],
+    "adjacent-overload-signatures": true,
+    "deprecation": true,
+    "member-ordering": false,
+    "ordered-imports": true,
+    "import-name": [
+      true,
+      {
+        "axios": "Axios"
+      }
+    ],
+    "function-name": [
+      true,
+      {
+        "method-regex": "^[a-z][a-zA-Z\\d]+$",
+        "private-method-regex": "^[a-z_][a-zA-Z\\d]+$",
+        "protected-method-regex": "^[a-z][a-zA-Z\\d]+$",
+        "static-method-regex": "^[a-z][a-zA-Z\\d]+$",
+        "function-regex": "^[a-z][a-zA-Z\\d]+$"
+      }
+    ],
+    "variable-name": [
+      true,
+      "ban-keywords",
+      "check-format",
+      "allow-pascal-case",
+      "allow-leading-underscore"
+    ],
+    "no-for-in-array": true,
+    "no-inferrable-types": [true, "ignore-params", "ignore-properties"],
+    "only-arrow-functions": [true, "allow-declarations"],
+    "prefer-template": true,
+    "prefer-switch": true,
+    "prefer-for-of": true,
+    "typedef": [true, "parameter", "property-declaration"]
+  }
+}

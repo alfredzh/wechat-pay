@@ -1,57 +1,63 @@
-import _ from 'underscore'
-import md5 from 'md5'
-import sha1 from 'sha1'
+import md5 from 'md5';
+import sha1 from 'sha1';
+import _ from 'underscore';
 
 export enum WechatPaymentMode {
   PRODUCTION,
   SANDBOX
 }
 
-export enum SignType  {
-  MD5 = 'md5',
-  SHA1 = 'sha1'
-};
+export enum SignType {
+  MD5 = "md5",
+  SHA1 = "sha1"
+}
 
 const productionUrls = {
-  UNIFIED_ORDER : 'https://api.mch.weixin.qq.com/pay/unifiedorder',
-  ORDER_QUERY : 'https://api.mch.weixin.qq.com/pay/orderquery',
-  REFUND : 'https://api.mch.weixin.qq.com/secapi/pay/refund',
-  REFUND_QUERY : 'https://api.mch.weixin.qq.com/pay/refundquery',
-  DOWNLOAD_BILL : 'https://api.mch.weixin.qq.com/pay/downloadbill',
-  SHORT_URL : 'https://api.mch.weixin.qq.com/tools/shorturl',
-  CLOSE_ORDER : 'https://api.mch.weixin.qq.com/pay/closeorder',
-  REDPACK_SEND : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack',
-  REDPACK_QUERY : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo',
-  TRANSFERS : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers',
-  TRANSFERS_QUERY : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo',
-}
+  UNIFIED_ORDER: "https://api.mch.weixin.qq.com/pay/unifiedorder",
+  ORDER_QUERY: "https://api.mch.weixin.qq.com/pay/orderquery",
+  REFUND: "https://api.mch.weixin.qq.com/secapi/pay/refund",
+  REFUND_QUERY: "https://api.mch.weixin.qq.com/pay/refundquery",
+  DOWNLOAD_BILL: "https://api.mch.weixin.qq.com/pay/downloadbill",
+  SHORT_URL: "https://api.mch.weixin.qq.com/tools/shorturl",
+  CLOSE_ORDER: "https://api.mch.weixin.qq.com/pay/closeorder",
+  REDPACK_SEND: "https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack",
+  REDPACK_QUERY: "https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo",
+  TRANSFERS:
+    "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers",
+  TRANSFERS_QUERY:
+    "https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo"
+};
 
 const sandboxUrls = {
-  UNIFIED_ORDER : 'https://api.mch.weixin.qq.com/sandbox/pay/unifiedorder',
-  ORDER_QUERY : 'https://api.mch.weixin.qq.com/sandbox/pay/orderquery',
-  REFUND : 'https://api.mch.weixin.qq.com/secapi/sandbox/pay/refund',
-  REFUND_QUERY : 'https://api.mch.weixin.qq.com/sandbox/pay/refundquery',
-  DOWNLOAD_BILL : 'https://api.mch.weixin.qq.com/sandbox/pay/downloadbill',
-  SHORT_URL : 'https://api.mch.weixin.qq.com/sandbox/tools/shorturl',
-  CLOSE_ORDER : 'https://api.mch.weixin.qq.com/sandbox/pay/closeorder',
-  REDPACK_SEND : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/sendredpack',
-  REDPACK_QUERY : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gethbinfo',
-  TRANSFERS : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/promotion/transfers',
-  TRANSFERS_QUERY : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gettransferinfo',
-}
+  UNIFIED_ORDER: "https://api.mch.weixin.qq.com/sandbox/pay/unifiedorder",
+  ORDER_QUERY: "https://api.mch.weixin.qq.com/sandbox/pay/orderquery",
+  REFUND: "https://api.mch.weixin.qq.com/secapi/sandbox/pay/refund",
+  REFUND_QUERY: "https://api.mch.weixin.qq.com/sandbox/pay/refundquery",
+  DOWNLOAD_BILL: "https://api.mch.weixin.qq.com/sandbox/pay/downloadbill",
+  SHORT_URL: "https://api.mch.weixin.qq.com/sandbox/tools/shorturl",
+  CLOSE_ORDER: "https://api.mch.weixin.qq.com/sandbox/pay/closeorder",
+  REDPACK_SEND:
+    "https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/sendredpack",
+  REDPACK_QUERY:
+    "https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gethbinfo",
+  TRANSFERS:
+    "https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/promotion/transfers",
+  TRANSFERS_QUERY:
+    "https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gettransferinfo"
+};
 
 interface WechatApiUrls {
-  UNIFIED_ORDER : string,
-  ORDER_QUERY : string,
-  REFUND : string,
-  REFUND_QUERY : string,
-  DOWNLOAD_BILL : string,
-  SHORT_URL : string,
-  CLOSE_ORDER : string,
-  REDPACK_SEND : string,
-  REDPACK_QUERY :string,
-  TRANSFERS : string,
-  TRANSFERS_QUERY : string,
+  UNIFIED_ORDER: string;
+  ORDER_QUERY: string;
+  REFUND: string;
+  REFUND_QUERY: string;
+  DOWNLOAD_BILL: string;
+  SHORT_URL: string;
+  CLOSE_ORDER: string;
+  REDPACK_SEND: string;
+  REDPACK_QUERY: string;
+  TRANSFERS: string;
+  TRANSFERS_QUERY: string;
 }
 
 interface Config {
@@ -62,7 +68,7 @@ interface Config {
   notifyUrl: string;
   passphrase: string;
   pfx: string;
-  mode?: WechatPaymentMode
+  mode?: WechatPaymentMode;
 }
 
 export class WechatPayment {
@@ -75,17 +81,17 @@ export class WechatPayment {
   passphrase: string;
   pfx: string;
   urls: WechatApiUrls;
-  constructor(config: Config){
-    this.initConfig(config)
-    this.initUrl()
+  constructor(config: Config) {
+    this.initConfig(config);
+    this.initUrl();
   }
-  protected initUrl(){
+  protected initUrl() {
     if (this.mode === WechatPaymentMode.SANDBOX) {
-      return this.urls = sandboxUrls
+      return (this.urls = sandboxUrls);
     }
-    this.urls = productionUrls
+    this.urls = productionUrls;
   }
-  protected initConfig (config: Config){
+  protected initConfig(config: Config) {
     this.appId = config.appId;
     this.partnerKey = config.partnerKey;
     this.mchId = config.mchId;
@@ -93,22 +99,23 @@ export class WechatPayment {
     this.notifyUrl = config.notifyUrl;
     this.passphrase = config.passphrase || config.mchId;
     this.pfx = config.pfx;
-    this.mode = config.mode || this.mode
+    this.mode = config.mode || this.mode;
   }
   protected generateTimeStamp(): string {
-    const timestamp = +new Date().valueOf() / 1000
+    const timestamp = +new Date().valueOf() / 1000;
     return timestamp.toString();
-  };
+  }
   protected generateNonceStr(length?: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const maxPos = chars.length;
-    let noceStr = '';
-    const nonceStrLength = length || 32
+    let noceStr = "";
+    const nonceStrLength = length || 32;
     for (let i = 0; i < nonceStrLength; i++) {
       noceStr += chars.charAt(Math.floor(Math.random() * maxPos));
     }
     return noceStr;
-  };
+  }
   protected extendWithDefault(obj, keysNeedExtend) {
     var defaults = {
       appid: this.appId,
@@ -127,57 +134,62 @@ export class WechatPayment {
     });
     return _.extend(extendObject, obj);
   }
-  protected signByType(type: SignType, text: string){
-    if (type === SignType.SHA1)  {
-      return sha1(text)
+  protected signByType(type: SignType, text: string) {
+    if (type === SignType.SHA1) {
+      return sha1(text);
     }
-    return md5(text)
+    return md5(text);
   }
   protected getSign(pkg, signType?: SignType) {
     pkg = _.clone(pkg);
     delete pkg.sign;
     let currentSignType = signType || SignType.MD5;
     var string1 = this.toQueryString(pkg);
-    var stringSignTemp = string1 + '&key=' + this.partnerKey;
-    const signValue = this.signByType(currentSignType, stringSignTemp).toUpperCase();
+    var stringSignTemp = string1 + "&key=" + this.partnerKey;
+    const signValue = this.signByType(
+      currentSignType,
+      stringSignTemp
+    ).toUpperCase();
     return signValue;
-  };
+  }
   protected toQueryString(object) {
-    return Object.keys(object).filter(function(key) {
-      return object[key] !== undefined && object[key] !== '';
-    }).sort().map(function(key) {
-      return key + '=' + object[key];
-    }).join('&');
-  };
+    return Object.keys(object)
+      .filter(function(key) {
+        return object[key] !== undefined && object[key] !== "";
+      })
+      .sort()
+      .map(function(key) {
+        return key + "=" + object[key];
+      })
+      .join("&");
+  }
   private signedQuery(url, params, options, callback) {
     let required = options.required || [];
 
     if (url == this.urls.REDPACK_SEND) {
-      params = this.extendWithDefault(params, [
-        'mch_id',
-        'nonce_str'
-      ]);
+      params = this.extendWithDefault(params, ["mch_id", "nonce_str"]);
     } else if (url == this.urls.TRANSFERS) {
-      params = this.extendWithDefault(params, [
-        'nonce_str'
-      ]);
+      params = this.extendWithDefault(params, ["nonce_str"]);
     } else {
       params = this.extendWithDefault(params, [
-        'appid',
-        'mch_id',
-        'sub_mch_id',
-        'nonce_str'
+        "appid",
+        "mch_id",
+        "sub_mch_id",
+        "nonce_str"
       ]);
     }
-    params = _.extend({
-      'sign': this.getSign(params)
-    }, params);
+    params = _.extend(
+      {
+        sign: this.getSign(params)
+      },
+      params
+    );
 
     if (params.long_url) {
       params.long_url = encodeURIComponent(params.long_url);
     }
 
-    for (var key in params) {
+    for (const key in params) {
       if (params[key] !== undefined && params[key] !== null) {
         params[key] = params[key].toString();
       }
@@ -185,7 +197,7 @@ export class WechatPayment {
 
     var missing = [];
     required.forEach(function(key) {
-      var alters = key.split('|');
+      var alters = key.split("|");
       for (var i = alters.length - 1; i >= 0; i--) {
         if (params[alters[i]]) {
           return;
@@ -195,10 +207,12 @@ export class WechatPayment {
     });
 
     if (missing.length) {
-      return callback('missing params ' + missing.join(','));
+      return callback("missing params " + missing.join(","));
     }
 
-    var request = (options.https ? this._httpsRequest : this._httpRequest).bind(this);
+    var request = (options.https ? this._httpsRequest : this._httpRequest).bind(
+      this
+    );
     request(url, this.buildXml(params), (err, body) => {
       if (err) {
         return callback(err);
@@ -207,28 +221,37 @@ export class WechatPayment {
     });
   }
   public unifiedOrder(params, callback) {
-    let requiredData = ['body', 'out_trade_no', 'total_fee', 'spbill_create_ip', 'trade_type'];
-    if (params.trade_type == 'JSAPI') {
-      requiredData.push('openid|sub_openid');
-    } else if (params.trade_type == 'NATIVE') {
-      requiredData.push('product_id');
+    let requiredData = [
+      "body",
+      "out_trade_no",
+      "total_fee",
+      "spbill_create_ip",
+      "trade_type"
+    ];
+    if (params.trade_type == "JSAPI") {
+      requiredData.push("openid|sub_openid");
+    } else if (params.trade_type == "NATIVE") {
+      requiredData.push("product_id");
     }
     params.notify_url = params.notify_url || this.notifyUrl;
-    this._signedQuery(URLS.UNIFIED_ORDER, params, {
-      required: requiredData
-    }, callback);
+    this._signedQuery(
+      URLS.UNIFIED_ORDER,
+      params,
+      {
+        required: requiredData
+      },
+      callback
+    );
   }
-  public async getBrandWCPayRequestParams (order, callback) {
+  public async getBrandWCPayRequestParams(order, callback) {
     var default_params = {
       appId: this.appId,
       timeStamp: this.generateTimeStamp(),
       nonceStr: this.generateNonceStr(),
-      signType: 'MD5'
+      signType: "MD5"
     };
 
-    order = this.extendWithDefault(order, [
-      'notify_url'
-    ]);
+    order = this.extendWithDefault(order, ["notify_url"]);
 
     this.unifiedOrder(order, function(err, data) {
       if (err) {
@@ -236,14 +259,14 @@ export class WechatPayment {
       }
 
       var params = _.extend(default_params, {
-        package: 'prepay_id=' + data.prepay_id
+        package: "prepay_id=" + data.prepay_id
       });
 
       params.paySign = this._getSign(params);
 
-      if (order.trade_type == 'NATIVE') {
+      if (order.trade_type == "NATIVE") {
         params.code_url = data.code_url;
-      }else if(order.trade_type == 'MWEB'){
+      } else if (order.trade_type == "MWEB") {
         params.mweb_url = data.mweb_url;
       }
 
@@ -674,7 +697,6 @@ export class WechatPayment {
 //   });
 // };
 
-
 // Payment.prototype._getSign = function(pkg, signType) {
 //   pkg = _.clone(pkg);
 //   delete pkg.sign;
@@ -692,8 +714,6 @@ export class WechatPayment {
 //     return key + '=' + object[key];
 //   }).join('&');
 // };
-
-
 
 // /**
 //  * [_generateNonceStr description]
