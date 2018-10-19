@@ -1,10 +1,11 @@
 import _ from 'underscore'
+import md5 from 'md5'
+import sha1 from 'sha1'
 
 export enum WechatPaymentMode {
   PRODUCTION,
   SANDBOX
 }
-
 
 export enum SignType  {
   MD5 = 'md5',
@@ -24,8 +25,6 @@ const productionUrls = {
   TRANSFERS : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers',
   TRANSFERS_QUERY : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo',
 }
-
-
 
 const sandboxUrls = {
   UNIFIED_ORDER : 'https://api.mch.weixin.qq.com/sandbox/pay/unifiedorder',
@@ -128,13 +127,19 @@ export class WechatPayment {
     });
     return _.extend(extendObject, obj);
   }
-  protected getSign(pkg, signType) {
+  protected signByType(type: SignType, text: string){
+    if (type === SignType.SHA1)  {
+      return sha1(text)
+    }
+    return md5(text)
+  }
+  protected getSign(pkg, signType?: SignType) {
     pkg = _.clone(pkg);
     delete pkg.sign;
-    signType = signType || 'MD5';
+    let currentSignType = signType || SignType.MD5;
     var string1 = this.toQueryString(pkg);
     var stringSignTemp = string1 + '&key=' + this.partnerKey;
-    var signValue = signTypes[signType](stringSignTemp).toUpperCase();
+    const signValue = this.signByType(currentSignType, stringSignTemp).toUpperCase();
     return signValue;
   };
   protected toQueryString(object) {
@@ -147,12 +152,12 @@ export class WechatPayment {
   private signedQuery(url, params, options, callback) {
     let required = options.required || [];
 
-    if (url == this.url.REDPACK_SEND) {
+    if (url == this.urls.REDPACK_SEND) {
       params = this.extendWithDefault(params, [
         'mch_id',
         'nonce_str'
       ]);
-    } else if (url == this.url.TRANSFERS) {
+    } else if (url == this.urls.TRANSFERS) {
       params = this.extendWithDefault(params, [
         'nonce_str'
       ]);
@@ -165,7 +170,7 @@ export class WechatPayment {
       ]);
     }
     params = _.extend({
-      'sign': this._getSign(params)
+      'sign': this.getSign(params)
     }, params);
 
     if (params.long_url) {
