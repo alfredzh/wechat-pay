@@ -5,32 +5,46 @@ export enum WechatPaymentMode {
   SANDBOX
 }
 
-enum ProductionUrl {
-  UNIFIED_ORDER = 'https://api.mch.weixin.qq.com/pay/unifiedorder',
-  ORDER_QUERY = 'https://api.mch.weixin.qq.com/pay/orderquery',
-  REFUND = 'https://api.mch.weixin.qq.com/secapi/pay/refund',
-  REFUND_QUERY = 'https://api.mch.weixin.qq.com/pay/refundquery',
-  DOWNLOAD_BILL = 'https://api.mch.weixin.qq.com/pay/downloadbill',
-  SHORT_URL = 'https://api.mch.weixin.qq.com/tools/shorturl',
-  CLOSE_ORDER = 'https://api.mch.weixin.qq.com/pay/closeorder',
-  REDPACK_SEND = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack',
-  REDPACK_QUERY = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo',
-  TRANSFERS = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers',
-  TRANSFERS_QUERY = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo',
+const productionUrl = {
+  UNIFIED_ORDER : 'https://api.mch.weixin.qq.com/pay/unifiedorder',
+  ORDER_QUERY : 'https://api.mch.weixin.qq.com/pay/orderquery',
+  REFUND : 'https://api.mch.weixin.qq.com/secapi/pay/refund',
+  REFUND_QUERY : 'https://api.mch.weixin.qq.com/pay/refundquery',
+  DOWNLOAD_BILL : 'https://api.mch.weixin.qq.com/pay/downloadbill',
+  SHORT_URL : 'https://api.mch.weixin.qq.com/tools/shorturl',
+  CLOSE_ORDER : 'https://api.mch.weixin.qq.com/pay/closeorder',
+  REDPACK_SEND : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack',
+  REDPACK_QUERY : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo',
+  TRANSFERS : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers',
+  TRANSFERS_QUERY : 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo',
 }
 
-enum SandboxUrl {
-  UNIFIED_ORDER = 'https://api.mch.weixin.qq.com/sandbox/pay/unifiedorder',
-  ORDER_QUERY = 'https://api.mch.weixin.qq.com/sandbox/pay/orderquery',
-  REFUND = 'https://api.mch.weixin.qq.com/secapi/sandbox/pay/refund',
-  REFUND_QUERY = 'https://api.mch.weixin.qq.com/sandbox/pay/refundquery',
-  DOWNLOAD_BILL = 'https://api.mch.weixin.qq.com/sandbox/pay/downloadbill',
-  SHORT_URL = 'https://api.mch.weixin.qq.com/sandbox/tools/shorturl',
-  CLOSE_ORDER = 'https://api.mch.weixin.qq.com/sandbox/pay/closeorder',
-  REDPACK_SEND = 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/sendredpack',
-  REDPACK_QUERY = 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gethbinfo',
-  TRANSFERS = 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/promotion/transfers',
-  TRANSFERS_QUERY = 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gettransferinfo',
+const sandboxUrl = {
+  UNIFIED_ORDER : 'https://api.mch.weixin.qq.com/sandbox/pay/unifiedorder',
+  ORDER_QUERY : 'https://api.mch.weixin.qq.com/sandbox/pay/orderquery',
+  REFUND : 'https://api.mch.weixin.qq.com/secapi/sandbox/pay/refund',
+  REFUND_QUERY : 'https://api.mch.weixin.qq.com/sandbox/pay/refundquery',
+  DOWNLOAD_BILL : 'https://api.mch.weixin.qq.com/sandbox/pay/downloadbill',
+  SHORT_URL : 'https://api.mch.weixin.qq.com/sandbox/tools/shorturl',
+  CLOSE_ORDER : 'https://api.mch.weixin.qq.com/sandbox/pay/closeorder',
+  REDPACK_SEND : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/sendredpack',
+  REDPACK_QUERY : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gethbinfo',
+  TRANSFERS : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/promotion/transfers',
+  TRANSFERS_QUERY : 'https://api.mch.weixin.qq.com/sandbox/mmpaymkttransfers/gettransferinfo',
+}
+
+interface WechatApiUrls {
+  UNIFIED_ORDER : string,
+  ORDER_QUERY : string,
+  REFUND : string,
+  REFUND_QUERY : string,
+  DOWNLOAD_BILL : string,
+  SHORT_URL : string,
+  CLOSE_ORDER : string,
+  REDPACK_SEND : string,
+  REDPACK_QUERY :string,
+  TRANSFERS : string,
+  TRANSFERS_QUERY : string,
 }
 
 interface Config {
@@ -51,8 +65,16 @@ export class WechatPayment {
   notifyUrl: string;
   passphrase: string;
   pfx: string;
+  mode: WechatPaymentMode;
+  url: WechatApiUrls;
   constructor(config: Config){
     this.initConfig(config)
+  }
+  protected initUrl(){
+    if (this.mode === WechatPaymentMode.SANDBOX) {
+      return this.url = sandboxUrl
+    }
+    this.url = productionUrl
   }
   protected initConfig (config: Config){
     this.appId = config.appId;
@@ -96,8 +118,7 @@ export class WechatPayment {
     return _.extend(extendObject, obj);
   }
   private signedQuery(url, params, options, callback) {
-      var self = this;
-      var required = options.required || [];
+    let required = options.required || [];
 
     if (url == URLS.REDPACK_SEND) {
       params = this.extendWithDefault(params, [
