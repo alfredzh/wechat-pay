@@ -1,6 +1,7 @@
 import md5 from 'md5';
 import sha1 from 'sha1';
 import _ from 'underscore';
+import xml2js from 'xml2js';
 
 export enum WechatPaymentMode {
   PRODUCTION,
@@ -274,6 +275,53 @@ export class WechatPayment {
 
       callback(null, params);
     });
+  }
+  public validate(xml, callback) {
+    var self = this;
+    xml2js.parseString(
+      xml,
+      {
+        trim: true,
+        explicitArray: false
+      },
+      function(err, json) {
+        var error = null,
+          data;
+        if (err) {
+          error = new Error();
+          err.name = "XMLParseError";
+          return callback(err, xml);
+        }
+
+        data = json ? json.xml : {};
+
+        // TODO split service error and others
+        if (data.return_code == RETURN_CODES.FAIL) {
+          error = new Error(data.return_msg);
+          error.name = "ProtocolError";
+        } else if (data.result_code == RETURN_CODES.FAIL) {
+          error = new Error(data.err_code);
+          error.name = "BusinessError";
+        } else if (data.appid && self.appId !== data.appid) {
+          error = new Error();
+          error.name = "InvalidAppId";
+        } else if (data.mch_id && self.mchId !== data.mch_id) {
+          error = new Error();
+          error.name = "InvalidMchId";
+        } else if (data.mchid && self.mchId !== data.mchid) {
+          error = new Error();
+          error.name = "InvalidMchId";
+        } else if (self.subMchId && self.subMchId !== data.sub_mch_id) {
+          error = new Error();
+          error.name = "InvalidSubMchId";
+        } else if (data.sign && self._getSign(data) !== data.sign) {
+          error = new Error();
+          error.name = "InvalidSignature";
+        }
+
+        callback(error, data);
+      }
+    );
   }
 }
 
@@ -696,73 +744,5 @@ export class WechatPayment {
 //     callback(error, data);
 //   });
 // };
-
-// Payment.prototype._getSign = function(pkg, signType) {
-//   pkg = _.clone(pkg);
-//   delete pkg.sign;
-//   signType = signType || 'MD5';
-//   var string1 = this._toQueryString(pkg);
-//   var stringSignTemp = string1 + '&key=' + this.partnerKey;
-//   var signValue = signTypes[signType](stringSignTemp).toUpperCase();
-//   return signValue;
-// };
-
-// Payment.prototype._toQueryString = function(object) {
-//   return Object.keys(object).filter(function(key) {
-//     return object[key] !== undefined && object[key] !== '';
-//   }).sort().map(function(key) {
-//     return key + '=' + object[key];
-//   }).join('&');
-// };
-
-// /**
-//  * [_generateNonceStr description]
-//  * @param  {[type]} length [description]
-//  * @return {[type]}        [description]
-//  */
-// Payment.prototype._generateNonceStr = function(length) {
-//   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//   var maxPos = chars.length;
-//   var noceStr = '';
-//   var i;
-//   for (i = 0; i < (length || 32); i++) {
-//     noceStr += chars.charAt(Math.floor(Math.random() * maxPos));
-//   }
-//   return noceStr;
-// };
-
-// /**
-//  * Promisify for public functions
-//  */
-// if (global.Promise) {
-//   for (let key in Payment.prototype) {
-//     let func = Payment.prototype[key]
-//     let syncFuncs = ['buildXml']
-//     if (typeof func == 'function' && key.indexOf('_') !== 0 && syncFuncs.indexOf(key) === -1) {
-//       Payment.prototype[key] = function () {
-//         let args = Array.prototype.slice.call(arguments)
-//         let originCallback = args[args.length - 1]
-//         return new Promise((resolve, reject) => {
-//           let handleResult = function (err, result) {
-//             if (err) {
-//               reject(err)
-//             } else {
-//               resolve(result)
-//             }
-//           }
-//           if (typeof originCallback !== 'function') {
-//             args.push(handleResult)
-//           } else {
-//             args[args.length - 1] = function (err, result) {
-//               handleResult(err, result)
-//               originCallback(err, result)
-//             }
-//           }
-//           func.apply(this, args)
-//         })
-//       }
-//     }
-//   }
-// }
 
 // exports.Payment = Payment;

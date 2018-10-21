@@ -3,12 +3,10 @@
   "version": "0.3.3",
   "description": "wechat payment api for document v3.3.5",
   "main": "index.js",
-  "scripts":
-  {
+  "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository":
-  {
+  "repository": {
     "type": "git",
     "url": "git://github.com/alfredzh/wechat-pay.git"
   },
@@ -19,17 +17,15 @@
   ],
   "author": "alfredzh",
   "license": "ISC",
-  "bugs":
-  {
+  "bugs": {
     "url": "https://github.com/alfredzh/wechat-pay/issues"
   },
   "homepage": "https://github.com/alfredzh/wechat-pay",
-  "dependencies":
-  {
-    "md5": "^2.0.0",
+  "dependencies": {
+    "md5": "^2.2.1",
     "request": "^2.45.0",
-    "sha1": "^1.1.0",
-    "underscore": "^1.7.0",
-    "xml2js": "^0.4.4"
+    "sha1": "^1.1.1",
+    "underscore": "^1.9.1",
+    "xml2js": "^0.4.19"
   }
 }
