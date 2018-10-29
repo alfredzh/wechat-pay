@@ -1,3 +1,4 @@
+import axios from 'axios';
 import md5 from 'md5';
 import sha1 from 'sha1';
 import _ from 'underscore';
@@ -11,6 +12,11 @@ export enum WechatPaymentMode {
 export enum SignType {
   MD5 = "md5",
   SHA1 = "sha1"
+}
+
+enum ReturnCode {
+  SUCCESS = "SUCCESS",
+  FAIL = "FAIL"
 }
 
 const productionUrls = {
@@ -164,7 +170,7 @@ export class WechatPayment {
       })
       .join("&");
   }
-  private signedQuery(url, params, options, callback) {
+  private async signedQuery(url, params, options, callback) {
     let required = options.required || [];
 
     if (url == this.urls.REDPACK_SEND) {
@@ -211,15 +217,23 @@ export class WechatPayment {
       return callback("missing params " + missing.join(","));
     }
 
-    var request = (options.https ? this._httpsRequest : this._httpRequest).bind(
-      this
-    );
-    request(url, this.buildXml(params), (err, body) => {
-      if (err) {
-        return callback(err);
+    try {
+      const result = await axios.get(url, this.buildXml(params));
+      this.validate(result.data, callback);
+    } catch (e) {
+      if (e) {
+        // TODO error handler
       }
-      this.validate(body, callback);
+    }
+  }
+  buildXml(obj) {
+    var builder = new xml2js.Builder({
+      allowSurrogateChars: true
     });
+    var xml = builder.buildObject({
+      xml: obj
+    });
+    return xml;
   }
   public unifiedOrder(params, callback) {
     let requiredData = [
@@ -235,8 +249,8 @@ export class WechatPayment {
       requiredData.push("product_id");
     }
     params.notify_url = params.notify_url || this.notifyUrl;
-    this._signedQuery(
-      URLS.UNIFIED_ORDER,
+    this.signedQuery(
+      this.urls.UNIFIED_ORDER,
       params,
       {
         required: requiredData
@@ -263,7 +277,7 @@ export class WechatPayment {
         package: "prepay_id=" + data.prepay_id
       });
 
-      params.paySign = this._getSign(params);
+      params.paySign = this.getSign(params);
 
       if (order.trade_type == "NATIVE") {
         params.code_url = data.code_url;
@@ -296,10 +310,10 @@ export class WechatPayment {
         data = json ? json.xml : {};
 
         // TODO split service error and others
-        if (data.return_code == RETURN_CODES.FAIL) {
+        if (data.return_code === ReturnCode.FAIL) {
           error = new Error(data.return_msg);
           error.name = "ProtocolError";
-        } else if (data.result_code == RETURN_CODES.FAIL) {
+        } else if (data.result_code === ReturnCode.FAIL) {
           error = new Error(data.err_code);
           error.name = "BusinessError";
         } else if (data.appid && self.appId !== data.appid) {
@@ -314,7 +328,7 @@ export class WechatPayment {
         } else if (self.subMchId && self.subMchId !== data.sub_mch_id) {
           error = new Error();
           error.name = "InvalidSubMchId";
-        } else if (data.sign && self._getSign(data) !== data.sign) {
+        } else if (data.sign && self.getSign(data) !== data.sign) {
           error = new Error();
           error.name = "InvalidSignature";
         }
